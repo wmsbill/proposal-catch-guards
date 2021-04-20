@@ -15,7 +15,9 @@ This proposal draws heavily from similar features available in
 
 ## Status
 
-**Champions**: Guilherme Hermeto (Netflix, [@ghermeto](https://twitter.com/ghermeto))
+**Champions**: 
+Guilherme Hermeto (Netflix, [@ghermeto](https://twitter.com/ghermeto)),
+Mary Marchini (Netflix [@mmarkini](https://twitter.com/mmarkini))
 
 **Stage**: 0
 
