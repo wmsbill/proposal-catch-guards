@@ -16,8 +16,8 @@ This proposal draws heavily from similar features available in
 ## Status
 
 **Champions**: 
-Guilherme Hermeto (Netflix, [@ghermeto](https://twitter.com/ghermeto)),
-Mary Marchini (Netflix [@mmarkini](https://twitter.com/mmarkini))
+Willian MArtins (Netflix, [@wmsbill](https://twitter.com/wmsbill)),
+
 
 **Stage**: 0
 
@@ -71,32 +71,12 @@ try {
   something();
 } catch (ConflictError as conflict) {
   // handle it one way...
-} catch(NotFoundError | OtherError as other) {
+} catch(NotFoundError || OtherError as other) {
   // handle the other way...
 } catch (err) {
   // catch all...
 }
 ```
-
-or:
-
-```javascript
-class ConflictError extends Error {}
-class NotFoundError extends Error {}
-class OtherError extends Error {}
-  
-try {
-  something();
-} catch (^ConflictError as conflict) {
-  // handle it one way...
-} catch(^NotFoundError | ^OtherError as other) {
-  // handle the other way...
-} catch (err) {
-  // catch all...
-}
-```
-
-
 
 ### Option 2 (using `if instanceOf`):
 
@@ -109,14 +89,33 @@ try {
   something();
 } catch (conflict if instanceOf ConflictError) {
   // handle it one way...
-} catch(other if instanceOf NotFoundError | OtherError) {
+} catch(other if instanceOf NotFoundError || instanceOf OtherError) {
   // handle the other way...
 } catch (err) {
   // catch all...
 }
 ```
 
-### Option 3 (using `:`):
+### Option 3 (using `instanceOf`):
+
+```javascript
+class ConflictError extends Error {}
+class NotFoundError extends Error {}
+class OtherError extends Error {}
+  
+try {
+  something();
+} catch (conflict instanceOf ConflictError) {
+  // handle it one way...
+} catch(other instanceOf NotFoundError || instanceOf OtherError) {
+  // handle the other way...
+} catch (err) {
+  // catch all...
+}
+```
+
+### Option 4 (using `:`):
+Possible conflict with Types as comment proposal
 
 ```javascript
 class ConflictError extends Error {}
