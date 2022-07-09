@@ -1,11 +1,7 @@
 # ECMAScript Catch Guards
 
-This proposal adds catch guards to the language, enabling developers to catch
-exceptions only when they match a specific class or classes.
-
-This proposal complements the [pattern matching proposal
-](https://github.com/tc39/proposal-pattern-matching) and does not try to
-compete with it.
+This proposal adds the catch guards to the language, enabling developers to catch
+exceptions only when they match a specific class or set of classes.
 
 This proposal draws heavily from similar features available in
 [Java](https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html#jls-14.20),
@@ -13,10 +9,13 @@ This proposal draws heavily from similar features available in
 [Ruby](http://rubylearning.com/satishtalim/ruby_exceptions.html), and
 [Python](https://docs.python.org/3/tutorial/errors.html#handling-exceptions).
 
+## Problem statement
+Javascript doesn't provide an ergonomic way of treating errors by type.
+
 ## Status
 
-**Champions**: 
-Willian MArtins (Netflix, [@wmsbill](https://twitter.com/wmsbill)),
+**Champion**: 
+Willian Martins (Netflix, [@wmsbill](https://twitter.com/wmsbill)),
 
 
 **Stage**: 0
@@ -27,7 +26,7 @@ Willian MArtins (Netflix, [@wmsbill](https://twitter.com/wmsbill)),
 
 - **Developer ergonomics**:
   
-  Today, developers have to catch all Errors, add a `if` or `switch` statement and 
+  Today, developers have to catch all Errors, add an `if` or `switch` statement and 
   rethrow even when they want to catch one particular type of error:
 
   ```javascript
@@ -55,10 +54,20 @@ Willian MArtins (Netflix, [@wmsbill](https://twitter.com/wmsbill)),
   
 - **Code/Engine Optimization**:
 
-  Engines will be able to skip completelly the blocks if the error doesn't matches
-  the correct type.
+  Engines will be able to skip the block entirely if the error doesn't match the correct type.
   
-## Syntax
+## Syntax options
+
+The current implementation uses the following syntax:
+```
+ catch ( CatchParameter[?Yield, ?Await] ) { block }
+```
+
+Where `CatchParameter` is:
+* `BindingIdentifier[?Yield, ?Await]`
+* `BindingPattern`
+
+This proposal introduces a new Binding type for the Catch statement called `BindingGuard`; these are some of the options for this new type.
 
 ### Option 1 (using `as`):
 
@@ -139,7 +148,7 @@ try {
 
 ## Q&A
 
-#### What if the error is an string?
+#### What if the error is a string?
 
 We are trying to solve for types only, so this would work:
 
@@ -151,6 +160,4 @@ try {
 }
 ```
 
-But it would catch all errors thrown as strings. Hopefully the
-[pattern matching proposal](https://github.com/tc39/proposal-pattern-matching)
-will address the use-case of matching regular expressions.
+But it would catch all errors thrown as strings.
