@@ -10,7 +10,7 @@ This proposal draws heavily from similar features available in
 [Python](https://docs.python.org/3/tutorial/errors.html#handling-exceptions).
 
 ## Problem statement
-Javascript doesn't provide an ergonomic way of treating errors by type.
+Javascript doesn't provide an ergonomic way of treating different types of errors.
 
 ## Status
 
@@ -54,7 +54,7 @@ Willian Martins (Netflix, [@wmsbill](https://twitter.com/wmsbill)),
   
 - **Code/Engine Optimization**:
 
-  Engines will be able to skip the block entirely if the error doesn't match the correct type.
+Engines can skip the block entirely if the error doesn't match the correct type.
   
 ## Syntax options
 
@@ -67,75 +67,36 @@ Where `CatchParameter` is:
 * `BindingIdentifier[?Yield, ?Await]`
 * `BindingPattern`
 
-This proposal introduces a new Binding type for the Catch statement called `BindingGuard`; these are some of the options for this new type.
 
-### Option 1 (using `as`):
+### Option 1 (New Catch Statement):
+
+This proposal introduces a new Binding type for the CatchParameter called `BindingGuard`; this new bind type's shape and semantics are subject to stage 1 development.
 
 ```javascript
-class ConflictError extends Error {}
-class NotFoundError extends Error {}
-class OtherError extends Error {}
   
 try {
   something();
-} catch (ConflictError as conflict) {
+} catch (BindingGuard) {
   // handle it one way...
-} catch(NotFoundError || OtherError as other) {
+} catch(BindingGuard) {
   // handle the other way...
 } catch (err) {
   // catch all...
 }
 ```
 
-### Option 2 (using `if instanceOf`):
+### Option 2 (New CatchPatten statement):
+
+This option can be used in conjunction with option one or leveraged on the Pattern Matching proposal to bind different error patterns (syntax and semantics are subject to stage 1 development), making the catch statement keep its current syntax.
+
 
 ```javascript
-class ConflictError extends Error {}
-class NotFoundError extends Error {}
-class OtherError extends Error {}
   
 try {
   something();
-} catch (conflict if instanceOf ConflictError) {
+} CatchPatten (BindingGuard) {
   // handle it one way...
-} catch(other if instanceOf NotFoundError || instanceOf OtherError) {
-  // handle the other way...
-} catch (err) {
-  // catch all...
-}
-```
-
-### Option 3 (using `instanceOf`):
-
-```javascript
-class ConflictError extends Error {}
-class NotFoundError extends Error {}
-class OtherError extends Error {}
-  
-try {
-  something();
-} catch (conflict instanceOf ConflictError) {
-  // handle it one way...
-} catch(other instanceOf NotFoundError || instanceOf OtherError) {
-  // handle the other way...
-} catch (err) {
-  // catch all...
-}
-```
-
-### Option 4 (using `:`):
-Possible conflict with Types as comment proposal
-
-```javascript
-class ConflictError extends Error {}
-class NotFoundError extends Error {}
-class OtherError extends Error {}
-  
-try {
-  something();
-} catch (conflict: ConflictError) {
-  // handle it one way...
-} catch(other: NotFoundError | OtherError) {
+} CatchPatten (BindingGuard) {
   // handle the other way...
 } catch (err) {
   // catch all...
@@ -146,18 +107,3 @@ try {
 
 * Babel Plugin //TBD
 
-## Q&A
-
-#### What if the error is a string?
-
-We are trying to solve for types only, so this would work:
-
-```javascript
-try {
-  something();
-} catch (String as err) {
-  // handle it...
-}
-```
-
-But it would catch all errors thrown as strings.
