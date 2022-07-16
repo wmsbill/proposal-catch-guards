@@ -1,109 +1,110 @@
 # ECMAScript Catch Guards
 
-This proposal adds the catch guards to the language, enabling developers to catch
-exceptions only when they match a specific class or set of classes.
-
-This proposal draws heavily from similar features available in
-[Java](https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html#jls-14.20),
-[C#](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/try-catch),
-[Ruby](http://rubylearning.com/satishtalim/ruby_exceptions.html), and
-[Python](https://docs.python.org/3/tutorial/errors.html#handling-exceptions).
-
-## Problem statement
-Javascript doesn't provide an ergonomic way of treating different types of errors.
+This proposal adds **catch guards** to the language, enabling developers to
+catch exceptions only when they match a specific pattern.
 
 ## Status
 
-**Champion**: 
-Willian Martins (Netflix, [@wmsbill](https://twitter.com/wmsbill)),
+**Champions**:
 
+- Willian Martins (he) [Netflix, [@wmsbill](https://twitter.com/wmsbill)]
+- Mark Cohen (they) [Netflix, [@mpcsh\_](https://twitter.com/mpcsh_)]
 
-**Stage**: 0
+**Stage**: [0](https://tc39.es/process-document)
 
-**Lastest update**: draft created
+## Problem statement
 
-## Motivation
+In modern JavaScript, it is possible to write conditional logic which depends
+on a thrown error using `catch`, but doing so is an exercise in poor ergonomics
+and error-proneness. A developer must unconditionally catch anything that might
+be thrown inside a `try`, and inspect what they caught inside the `catch`:
 
-- **Developer ergonomics**:
-  
-  Today, developers have to catch all Errors, add an `if` or `switch` statement and 
-  rethrow even when they want to catch one particular type of error:
-
-  ```javascript
-  class ConflictError extends Error {}
-  
-  try {
-    something();
-  } catch (err) {
-    if (err instanceOf ConflictError) {
-      // handle it...
-    }
+```js
+try {
+  apiRequest();
+} catch (err) {
+  if (err instanceof InternalServerError) {
+    log({ level: 'ERROR', payload: ... });
+  } else if (err instanceof NotFoundError) {
+    log({ level: 'INFO', payload: ... });
+  } else {
     throw err;
   }
-  ```
-  
-- **Parity with other languages**:
-  
-  Scoping error handling to specific types is a common construct in several programming
-  languges, as:
-  [Java](https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html#jls-14.20),
-  [C#](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/try-catch),
-  [Ruby](http://rubylearning.com/satishtalim/ruby_exceptions.html), and
-  [Python](https://docs.python.org/3/tutorial/errors.html#handling-exceptions).
-
-  
-- **Code/Engine Optimization**:
-
-Engines can skip the block entirely if the error doesn't match the correct type.
-  
-## Syntax options
-
-The current implementation uses the following syntax:
-```
- catch ( CatchParameter[?Yield, ?Await] ) { block }
-```
-
-Where `CatchParameter` is:
-* `BindingIdentifier[?Yield, ?Await]`
-* `BindingPattern`
-
-
-### Option 1 (New Catch Statement):
-
-This proposal introduces a new Binding type for the CatchParameter called `BindingGuard`; this new bind type's shape and semantics are subject to stage 1 development.
-
-```javascript
-  
-try {
-  something();
-} catch (BindingGuard) {
-  // handle it one way...
-} catch(BindingGuard) {
-  // handle the other way...
-} catch (err) {
-  // catch all...
 }
 ```
 
-### Option 2 (New CatchPatten statement):
+This poses two main problems:
 
-This option can be used in conjunction with option one or leveraged on the Pattern Matching proposal to bind different error patterns (syntax and semantics are subject to stage 1 development), making the catch statement keep its current syntax.
+1. It requires a superfluous extra level of nesting and the use of an extra
+   conditional construct. While this may not be a problem _per se_, it
+   indicates that the language could be better adapted to a very frequent use
+   case. When "square peg in round hole" becomes common practice, it becomes
+   worthwhile to build a square hole.
+2. It requires the developer to re-throw any errors they don't want to handle.
+   This process can become fraught and error-prone, and has at least [once in
+   history](https://bugs.chromium.org/p/chromium/issues/detail?id=60240) caused
+   misbehavior due to an engine bug.
 
 
-```javascript
-  
+## Terminology
+
+A **catch guard** is a new conditional construct, designed to be used as an arm
+within a `try` / `catch` block.
+
+A **pattern**, in this proposal, should be defined according to the [pattern
+matching proposal](https://github.com/tc39/proposal-pattern-matching#pattern).
+
+## Syntax and semantics
+
+> _Standard disclaimer: this proposal is seeking stage 1, and as such, nothing
+> below represents a concrete decision or even necessarily a strong opinion. To
+> that end, the prose below is intentionally informal; more concrete
+> specifications will be developed before seeking stage 2._
+
+We intend this proposal to be a follow-on to [pattern
+matching](https://github.com/tc39/proposal-pattern-matching), which provides
+the `match` keyword, and a grammar for patterns.
+
+Consider the following code snippet:
+
+```js
 try {
-  something();
-} CatchPatten (BindingGuard) {
-  // handle it one way...
-} CatchPatten (BindingGuard) {
-  // handle the other way...
-} catch (err) {
-  // catch all...
+  apiRequest();
+} catch match (${InternalServerError}) {
+  log({ level: 'ERROR', payload: ... });
+} catch match (${NotFoundError}) {
+  log({ level: 'INFO', payload: ... });
 }
 ```
 
-## Implementations
+Here, we can see the benefits of this proposal at work:
 
-* Babel Plugin //TBD
+- No extra nesting is required to inspect the provided error
+- The familiar grammar of patterns — specifically, an [interpolation
+  pattern](https://github.com/tc39/proposal-pattern-matching#interpolation-pattern)
+  using the [custom matcher
+  protocol](https://github.com/tc39/proposal-pattern-matching#custom-matcher-protocol)
+  — provides a much more robust toolkit for crafting conditions than tools like
+  `instanceof`
+- Any error not caught by the specified guards continues to throw; no
+  re-throwing is required
 
+Finally, it will still be possible to chain a traditional `catch` on the end:
+
+```js
+try {
+  apiRequest();
+} catch match (${InternalServerError} or ${NotFoundError}) {
+  retry();
+} catch {
+  log({ level: 'FATAL', payload: ... });
+  gracefulShutdown();
+}
+```
+
+Here, we can see a catch guard interacting with a traditional `catch`
+statement. We think it should be possible to implement this without changing
+anything about `catch` itself. Additionally, we're able to leverage [the `or`
+pattern
+combinator](https://github.com/tc39/proposal-pattern-matching#pattern-combinators)
+to compress shared conditional logic into a single guard.
