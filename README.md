@@ -85,6 +85,60 @@ try {
 }
 ```
 
+### Option 1 bis (New Catch Statement with optionnal type):
+
+This proposal introduces a specific syntax that imply that ErrorType is an Optionnal argument and when given is used to catch error with specific type.
+
+```javascript  
+try {
+  something();
+} catch (err, ErrorType) {
+  // handle it one way...
+} catch(err, ErrorType) {
+  // handle the other way...
+} catch (err) {
+  // catch all...
+}
+```
+
+transpile to
+
+```javascript  
+try {
+  something();
+} catch (err) {
+  if(err instanceof ErrorType) {
+    // handle it one way...
+  } else if(err instanceof ErrorType) {
+    // handle the other way...
+  } else {
+    // catch all...
+  }
+}
+```
+
+or this
+
+```javascript  
+try {
+  something();
+} catch (err, ErrorType) {
+  // handle it one way...
+}
+```
+
+transpile to
+
+```javascript  
+try {
+  something();
+} catch(err) {
+  if(err instanceof ErrorType){
+    // handle it one way...
+  } else throw err
+}
+```
+
 ### Option 2 (New CatchPatten statement):
 
 This option can be used in conjunction with option one or leveraged on the Pattern Matching proposal to bind different error patterns (syntax and semantics are subject to stage 1 development), making the catch statement keep its current syntax.
